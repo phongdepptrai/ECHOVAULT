@@ -1,0 +1,5 @@
+package com.echovault;
+
+public enum EnemyArchetype {
+    CHASER, HOPPER, WANDERER, TURRET, ORBITER, BOMBER, SPLITTER_PLUS, SHIELDED, LASER_TELEGRAPH, SWARMER
+}

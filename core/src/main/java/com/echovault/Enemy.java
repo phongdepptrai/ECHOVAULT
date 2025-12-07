@@ -4,73 +4,44 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 
+// Base class for all enemies
 public class Enemy extends Entity {
-    public int type; // 0=Chaser, 1=Shooter, 2=Splitter
-    public float shootTimer = 0;
+    protected float stateTimer = 0;
+    protected int state = 0; // Generic state machine index
 
+    public Enemy(float x, float y, float radius, float hp) {
+        super(x, y, radius, hp, 1); // Team 1
+        this.color = Color.RED;
+    }
+
+    // Deprecated constructor for compatibility if needed, but we will refactor usage
     public Enemy(float x, float y, int type) {
-        super(x, y, 15, 5, 1); // 5 HP, team 1 (Enemy)
-        this.type = type;
-        if (type == 2) { // Splitter
-            radius = 20;
-            maxHp = 8;
-            hp = 8;
-        }
+        super(x, y, 15, 5, 1);
+        // This is legacy, shouldn't be used by new code
     }
 
     public void update(float delta, Player player, RoomManager roomManager) {
-        if (player == null) return;
-
-        Vector2 toPlayer = new Vector2(player.position).sub(position);
-        float dist = toPlayer.len();
-        toPlayer.nor();
-
-        if (type == 0) { // Chaser
-            velocity.set(toPlayer.scl(100f));
-        } else if (type == 1) { // Shooter
-            // Keep distance ~200
-            if (dist > 250) {
-                velocity.set(toPlayer.scl(80f));
-            } else if (dist < 150) {
-                velocity.set(toPlayer.scl(-80f));
-            } else {
-                velocity.setZero();
-            }
-
-            shootTimer -= delta;
-            if (shootTimer <= 0) {
-                shootTimer = 2.0f;
-                // Shoot at player
-                Vector2 aim = new Vector2(player.position).sub(position);
-                Bullet b = new Bullet(position.x, position.y, aim.angleDeg(), 400f, 1, team);
-                roomManager.addBullet(b);
-            }
-        } else if (type == 2) { // Splitter
-            velocity.set(toPlayer.scl(60f));
-        }
-
         super.update(delta);
-    }
-
-    @Override
-    public void takeDamage(float amount) {
-        super.takeDamage(amount);
+        stateTimer += delta;
     }
 
     public void onDeath(RoomManager roomManager) {
-        if (type == 2) {
-            // Spawn 2 small chasers
-            roomManager.addEnemy(new Enemy(position.x - 10, position.y, 0));
-            roomManager.addEnemy(new Enemy(position.x + 10, position.y, 0));
-        }
+        // Base behavior (drops, etc could go here)
     }
 
     @Override
     public void render(ShapeRenderer sr) {
-        if (type == 0) sr.setColor(Color.ORANGE);
-        else if (type == 1) sr.setColor(Color.MAGENTA);
-        else sr.setColor(Color.PURPLE);
-
+        if (isElite) {
+            sr.setColor(Color.GOLD);
+            sr.circle(position.x, position.y, radius + 2);
+        }
+        sr.setColor(color);
         sr.circle(position.x, position.y, radius);
+    }
+
+    public void makeElite() {
+        this.isElite = true;
+        this.maxHp *= 1.5f;
+        this.hp = maxHp;
     }
 }

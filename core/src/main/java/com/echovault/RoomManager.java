@@ -24,10 +24,12 @@ public class RoomManager {
 
     // Spawning logic
     private long seed;
+    private com.badlogic.gdx.math.RandomXS128 rng; // Deterministic RNG
 
     // Previous room data
     public List<InputFrame> lastRoomRecording;
     public Vector2 lastRoomPlayerStartPos;
+    public Vector2 currentRoomPlayerStartPos;
 
     public RoomManager(Player player) {
         this.player = player;
@@ -35,6 +37,7 @@ public class RoomManager {
         this.entities = new ArrayList<>();
         this.bullets = new ArrayList<>();
         this.seed = System.currentTimeMillis();
+        this.rng = new com.badlogic.gdx.math.RandomXS128(seed);
 
         startRoom();
     }
@@ -45,20 +48,20 @@ public class RoomManager {
         roomCleared = false;
         itemPhase = false;
 
-        // Spawn Enemies
-        int enemyCount = 6 + MathUtils.random(6);
-        for (int i = 0; i < enemyCount; i++) {
-            float x = MathUtils.random(bounds.x + 50, bounds.x + bounds.width - 50);
-            float y = MathUtils.random(bounds.y + 50, bounds.y + bounds.height - 50);
-            // Ensure not too close to player start
-            if (Vector2.dst(x, y, player.position.x, player.position.y) < 200) {
-                 x += 200; // rough fix
-            }
-            entities.add(new Enemy(x, y, MathUtils.random(2)));
+        // Reseed for room
+        rng.setSeed(seed + roomIndex * 1000);
+        MathUtils.random.setSeed(seed + roomIndex * 1000); // Also sync global for helpers
+
+        if (roomIndex > 0 && roomIndex % 6 == 0) {
+            // BOSS ROOM
+            spawnBoss();
+        } else {
+            // REGULAR ROOM
+            spawnWave();
         }
 
-        // Spawn Ghost if we have recording
-        if (lastRoomRecording != null && !lastRoomRecording.isEmpty()) {
+        // Spawn Ghost if we have recording (Not in boss room? Or yes?)
+        if (roomIndex % 6 != 0 && lastRoomRecording != null && !lastRoomRecording.isEmpty()) {
             boolean friendly = false;
             boolean forked = false;
             boolean delayed = false;
@@ -71,11 +74,6 @@ public class RoomManager {
             }
 
             // Ghost spawn pos is relative to where player STARTED in PREVIOUS room.
-            // We need to store that.
-            // `lastRoomPlayerStartPos` should be set when room starts (or ends).
-            // Actually, we need to know where player started *in the previous room*.
-            // So we take `lastRoomPlayerStartPos` passed from prev room.
-
             if (lastRoomPlayerStartPos == null) lastRoomPlayerStartPos = new Vector2(640, 360); // default center
 
             ghost = new Ghost(lastRoomPlayerStartPos.x, lastRoomPlayerStartPos.y, lastRoomRecording, friendly, forked, delayed);
@@ -83,16 +81,84 @@ public class RoomManager {
         }
 
         // Save CURRENT start pos for NEXT room
-        // Player position should be set by Door Logic before calling startRoom usually?
-        // Or we capture it now.
-        // Wait, if I entered from West door, my pos is West. I record that now.
-        // But `lastRoomPlayerStartPos` is for the CURRENT ghost.
-        // We need `currentRoomStartPos` to save for NEXT ghost.
-        // Let's use `player.position` as the start pos for this room.
-        // We will store it in a temp var and promote it to `lastRoomPlayerStartPos` on room transition.
     }
 
-    private Vector2 currentRoomPlayerStartPos;
+    private void spawnBoss() {
+        // Center of room
+        float cx = bounds.x + bounds.width/2;
+        float cy = bounds.y + bounds.height/2;
+
+        if ((roomIndex / 6) % 2 != 0) {
+            // Odd boss index (6, 18..): Curator
+            entities.add(new com.echovault.bosses.CuratorBoss(cx, cy));
+        } else {
+            // Even boss index (12, 24..): Bellwether
+            entities.add(new com.echovault.bosses.BellwetherBoss(cx, cy));
+        }
+    }
+
+    private void spawnWave() {
+        int budget = 12 + roomIndex * 2; // Increase diff
+        // Cap budget?
+
+        while (budget > 0) {
+            // Select archetype
+            EnemyArchetype type = EnemyArchetype.values()[rng.nextInt(EnemyArchetype.values().length)];
+            int cost = getCost(type);
+
+            if (cost <= budget) {
+                float x = rng.nextFloat() * (bounds.width - 100) + bounds.x + 50;
+                float y = rng.nextFloat() * (bounds.height - 100) + bounds.y + 50;
+
+                if (Vector2.dst(x, y, player.position.x, player.position.y) < 250) continue;
+
+                Enemy e = createEnemy(type, x, y);
+
+                // Elite chance
+                if (roomIndex >= 6 && rng.nextFloat() < 0.15f) {
+                    e.makeElite();
+                    budget -= 2; // Elites cost more?
+                }
+
+                entities.add(e);
+                budget -= cost;
+            } else {
+                budget--; // Avoid infinite loop if only cheap units left
+            }
+        }
+    }
+
+    private int getCost(EnemyArchetype type) {
+        switch(type) {
+            case SWARMER: return 1;
+            case ORBITER: return 2;
+            case HOPPER: return 2;
+            case CHASER: return 3;
+            case WANDERER: return 3;
+            case SHIELDED: return 4;
+            case TURRET: return 4;
+            case BOMBER: return 5;
+            case LASER_TELEGRAPH: return 5;
+            case SPLITTER_PLUS: return 6;
+            default: return 1;
+        }
+    }
+
+    private Enemy createEnemy(EnemyArchetype type, float x, float y) {
+        switch(type) {
+            case CHASER: return new com.echovault.enemies.Chaser(x, y);
+            case HOPPER: return new com.echovault.enemies.Hopper(x, y);
+            case WANDERER: return new com.echovault.enemies.Wanderer(x, y);
+            case TURRET: return new com.echovault.enemies.Turret(x, y);
+            case ORBITER: return new com.echovault.enemies.Orbiter(x, y);
+            case BOMBER: return new com.echovault.enemies.Bomber(x, y);
+            case SPLITTER_PLUS: return new com.echovault.enemies.SplitterPlus(x, y);
+            case SHIELDED: return new com.echovault.enemies.ShieldedEnemy(x, y);
+            case LASER_TELEGRAPH: return new com.echovault.enemies.LaserEnemy(x, y);
+            case SWARMER: return new com.echovault.enemies.Swarmer(x, y);
+            default: return new com.echovault.enemies.Chaser(x, y);
+        }
+    }
 
     public void update(float delta) {
         if (currentRoomPlayerStartPos == null) {
@@ -144,6 +210,15 @@ public class RoomManager {
             // Enemies/Ghost
             for (Entity e : entities) {
                 if (b.team != e.team && b.getBounds().overlaps(e.getBounds())) {
+                    // Shield Check
+                    if (e instanceof com.echovault.enemies.ShieldedEnemy) {
+                        if (((com.echovault.enemies.ShieldedEnemy)e).blocksDamage(b.velocity)) {
+                             // Blocked!
+                             // Visual effect?
+                             b.dead = true;
+                             break;
+                        }
+                    }
                     e.takeDamage(b.damage);
                     b.dead = true;
                     // bit.remove(); // Done after break
@@ -257,7 +332,7 @@ public class RoomManager {
         bullets.add(b);
     }
 
-    public void addEnemy(Enemy e) {
+    public void addEnemy(Entity e) {
         entities.add(e);
     }
 }

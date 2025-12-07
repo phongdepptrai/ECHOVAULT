@@ -89,6 +89,11 @@ public class GameScreen implements Screen {
     private void drawWorld() {
         game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
+        // Render Telegraphs (Underneath entities)
+        for (Entity e : roomManager.entities) {
+            e.renderTelegraph(game.shapeRenderer);
+        }
+
         // Draw Walls
         Rectangle b = roomManager.bounds;
         game.shapeRenderer.setColor(Color.DARK_GRAY);
@@ -151,6 +156,25 @@ public class GameScreen implements Screen {
         game.font.draw(game.batch, "Room: " + roomManager.roomIndex, 20, 680);
         game.font.draw(game.batch, "Items: " + player.items.size(), 20, 660);
 
+        // BOSS BAR
+        for (Entity e : roomManager.entities) {
+            if (e instanceof com.echovault.bosses.Boss) {
+                com.echovault.bosses.Boss boss = (com.echovault.bosses.Boss)e;
+                game.font.setColor(Color.RED);
+                game.font.draw(game.batch, boss.getName(), 580, 700);
+                // Simple bar
+                game.batch.end();
+                game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                game.shapeRenderer.setColor(Color.BLACK);
+                game.shapeRenderer.rect(400, 680, 480, 10);
+                game.shapeRenderer.setColor(Color.RED);
+                game.shapeRenderer.rect(400, 680, 480 * (boss.hp / boss.maxHp), 10);
+                game.shapeRenderer.end();
+                game.batch.begin();
+                break; // Only 1 boss bar
+            }
+        }
+
         if (roomManager.roomCleared && !roomManager.itemPhase) {
             game.font.draw(game.batch, "CLEAR! Go to next room", 600, 400);
         }
@@ -175,6 +199,11 @@ public class GameScreen implements Screen {
             game.font.draw(game.batch, "FPS: " + Gdx.graphics.getFramesPerSecond(), 20, 20);
             game.font.draw(game.batch, "Entities: " + roomManager.entities.size(), 20, 40);
             game.font.draw(game.batch, "Bullets: " + roomManager.bullets.size(), 20, 60);
+
+            // Draw Enemy Names above heads
+            for (Entity e : roomManager.entities) {
+                 game.font.draw(game.batch, e.getClass().getSimpleName(), e.position.x - 20, e.position.y + 40);
+            }
         }
 
         game.batch.end();
