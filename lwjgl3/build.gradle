@@ -1,0 +1,21 @@
+apply plugin: "java"
+apply plugin: "application"
+
+sourceCompatibility = 1.17
+sourceSets.main.java.srcDirs = [ "src/main/java/" ]
+
+mainClassName = "com.echovault.DesktopLauncher"
+application.mainClass = "com.echovault.DesktopLauncher"
+eclipse.project.name = appName + "-desktop"
+
+dependencies {
+    implementation project(":core")
+    implementation "com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion"
+    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+}
+
+run {
+    workingDir = project.file("../core/assets")
+    // ignore assets folder for now as we generate everything procedurally,
+    // but libGDX usually expects it. We will create the dir.
+}
