@@ -34,6 +34,12 @@ public class GameScreen implements Screen {
     }
 
     private void init() {
+        // Initialize systems
+        com.echovault.assets.AssetGenerator.init();
+        com.echovault.combat.projectile.ProjectileFactory.init();
+        com.echovault.pattern.PatternFactory.init();
+        com.echovault.core.Registry.initDefaults();
+
         player = new Player(640, 360);
         roomManager = new RoomManager(player);
         gameOver = false;
@@ -120,7 +126,7 @@ public class GameScreen implements Screen {
         game.shapeRenderer.rect(b.x + b.width, b.y + b.height/2 - doorSize/2, 10, doorSize); // Right
 
 
-        // Draw Entities
+        // Draw Entities (ShapeRenderer Fallback)
         for (Entity e : roomManager.entities) {
             e.render(game.shapeRenderer);
         }
@@ -130,6 +136,28 @@ public class GameScreen implements Screen {
         for (Bullet bullet : roomManager.bullets) {
             bullet.render(game.shapeRenderer);
         }
+
+        game.shapeRenderer.end();
+
+        // SPRITE BATCH PASS
+        game.batch.begin();
+
+        for (Entity e : roomManager.entities) {
+            e.render(game.batch);
+        }
+
+        player.render(game.batch);
+
+        for (Bullet bullet : roomManager.bullets) {
+             if (bullet instanceof com.echovault.combat.projectile.ProjectileEntity) {
+                 ((com.echovault.combat.projectile.ProjectileEntity)bullet).render(game.batch);
+             }
+        }
+
+        game.batch.end();
+
+        // Resume ShapeRenderer for items/debug
+        game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
         // Draw Items
         for (Item item : roomManager.activeItems) {

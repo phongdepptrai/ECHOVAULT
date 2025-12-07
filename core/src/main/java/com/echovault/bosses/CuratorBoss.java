@@ -7,9 +7,11 @@ import com.echovault.Ghost;
 import com.echovault.Player;
 import com.echovault.RoomManager;
 import com.echovault.enemies.Turret;
-import com.echovault.utils.BulletPatterns;
 import com.echovault.utils.Telegraph;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.echovault.pattern.PatternFactory;
+import com.echovault.combat.projectile.ProjectileDef;
+import com.echovault.core.Registry;
 
 public class CuratorBoss extends Boss {
 
@@ -39,7 +41,7 @@ public class CuratorBoss extends Boss {
                         boss.position.set(dashTarget);
                         boss.activeTelegraph = null;
                         timer = 0;
-                        BulletPatterns.shootRing(rm, boss.position, 12, 150f, 1, 1, 0);
+                        PatternFactory.get("ring_12").execute(rm, boss.position, null);
                     }
                     return;
                 }
@@ -54,8 +56,9 @@ public class CuratorBoss extends Boss {
                          boss.activeTelegraph = new Telegraph(Telegraph.Type.LINE, boss.position, dest, boss.radius*2, 0.6f, Color.ORANGE);
                      } else {
                          // Shoot Fan + Aimed
-                         BulletPatterns.shootFan(rm, boss.position, p.position, 5, 45f, 200f, 1, 1);
-                         BulletPatterns.shootAimed(rm, boss.position, p.position, 300f, 1, 1);
+                         PatternFactory.get("fan_5").execute(rm, boss.position, p.position);
+                         // Manual aimed using factory
+                         PatternFactory.shootFan(rm, boss.position, p.position, (ProjectileDef)Registry.projectiles.get("fast_enemy"), 1, 0);
                          timer = 0.5f; // Faster cycle
                      }
                 }
@@ -79,7 +82,7 @@ public class CuratorBoss extends Boss {
             public void update(float delta, Boss boss, Player p, RoomManager rm) {
                 timer += delta;
                 if (timer > 1.5f) {
-                    BulletPatterns.shootRing(rm, boss.position, 16, 180f, 1, 1, volleyCount * 10f);
+                    PatternFactory.shootRing(rm, boss.position, (ProjectileDef)Registry.projectiles.get("basic_enemy"), 16, volleyCount * 10f);
                     volleyCount++;
                     timer = 0;
                 }
@@ -114,13 +117,12 @@ public class CuratorBoss extends Boss {
 
                 // Spiral
                 if (timer > 0.1f) {
-                     BulletPatterns.shootSpiral(rm, boss.position, 1, (boss.stateTimer * 100f) % 360, 200f, 1, 1);
-                     // timer not reset, continuous
+                     PatternFactory.get("spiral_rapid").execute(rm, boss.position, null);
                 }
 
                 if (timer > 4.0f) {
                     // Burst Ring
-                    BulletPatterns.shootRing(rm, boss.position, 20, 300f, 1, 1, 0);
+                    PatternFactory.shootRing(rm, boss.position, (ProjectileDef)Registry.projectiles.get("fast_enemy"), 20, 0);
                     timer = 1.5f; // Reset loop partly
                 }
             }

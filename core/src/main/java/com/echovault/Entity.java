@@ -3,7 +3,10 @@ package com.echovault;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.Color;
+import com.echovault.anim.AnimationController;
 
 public abstract class Entity {
     public Vector2 position;
@@ -19,6 +22,9 @@ public abstract class Entity {
     public boolean isElite = false;
     public Color color = Color.WHITE;
 
+    // Animation
+    public AnimationController animController;
+
     public Entity(float x, float y, float radius, float hp, int team) {
         this.position = new Vector2(x, y);
         this.velocity = new Vector2(0, 0);
@@ -31,9 +37,24 @@ public abstract class Entity {
 
     public void update(float delta) {
         position.mulAdd(velocity, delta);
+        if (animController != null) {
+            animController.update(delta);
+        }
     }
 
     public abstract void render(ShapeRenderer sr);
+
+    public void render(SpriteBatch batch) {
+        if (animController != null) {
+            TextureRegion reg = animController.getRegion();
+            if (reg != null) {
+                batch.setColor(color);
+                // Draw centered
+                batch.draw(reg, position.x - reg.getRegionWidth()/2, position.y - reg.getRegionHeight()/2);
+                batch.setColor(Color.WHITE);
+            }
+        }
+    }
 
     public void takeDamage(float amount) {
         hp -= amount;

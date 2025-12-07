@@ -12,6 +12,12 @@ public class Enemy extends Entity {
     public Enemy(float x, float y, float radius, float hp) {
         super(x, y, radius, hp, 1); // Team 1
         this.color = Color.RED;
+
+        // Init default animation if available
+        com.echovault.anim.AnimationSet set = com.echovault.anim.AnimationBank.getSet("enemy_generic");
+        if (set != null) {
+            this.animController = new com.echovault.anim.AnimationController(set);
+        }
     }
 
     // Deprecated constructor for compatibility if needed, but we will refactor usage
@@ -31,6 +37,7 @@ public class Enemy extends Entity {
 
     @Override
     public void render(ShapeRenderer sr) {
+        // Fallback or debug
         if (isElite) {
             sr.setColor(Color.GOLD);
             sr.circle(position.x, position.y, radius + 2);

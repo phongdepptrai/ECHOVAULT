@@ -34,9 +34,23 @@ public class Player extends Entity {
 
     public Player(float x, float y) {
         super(x, y, 15, 6, 0); // HP 6 (3 hearts)
+
+        com.echovault.anim.AnimationSet set = com.echovault.anim.AnimationBank.getSet("player");
+        if (set != null) {
+            this.animController = new com.echovault.anim.AnimationController(set);
+        }
     }
 
     public void update(float delta, InputFrame input, RoomManager roomManager) {
+        // Animation State
+        if (isDashing) {
+            // animController.setState("dash", "down", false); // if we had dash anim
+        } else if (velocity.len2() > 10) {
+            animController.setState("move", "down", true);
+        } else {
+            animController.setState("idle", "down", true);
+        }
+
         // Cooldowns
         if (dashCooldownTimer > 0) dashCooldownTimer -= delta;
         if (fireTimer > 0) fireTimer -= delta;

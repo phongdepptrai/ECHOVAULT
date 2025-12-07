@@ -190,7 +190,14 @@ public class RoomManager {
         Iterator<Bullet> bit = bullets.iterator();
         while (bit.hasNext()) {
             Bullet b = bit.next();
-            b.update(delta);
+
+            // Handle new ProjectileEntity logic which needs RoomManager
+            if (b instanceof com.echovault.combat.projectile.ProjectileEntity) {
+                ((com.echovault.combat.projectile.ProjectileEntity)b).update(delta, this);
+            } else {
+                b.update(delta);
+            }
+
             if (!bounds.contains(b.position)) b.dead = true;
 
             if (b.dead) {

@@ -6,8 +6,8 @@ import com.badlogic.gdx.math.Vector2;
 import com.echovault.Player;
 import com.echovault.RoomManager;
 import com.echovault.enemies.Swarmer;
-import com.echovault.utils.BulletPatterns;
 import com.echovault.utils.Telegraph;
+import com.echovault.pattern.PatternFactory;
 
 public class BellwetherBoss extends Boss {
 
@@ -37,7 +37,7 @@ public class BellwetherBoss extends Boss {
 
                 // Slow aimed shots
                 if (MathUtils.random() < 0.05f) {
-                    BulletPatterns.shootAimed(rm, boss.position, p.position, 150f, 1, 1);
+                    PatternFactory.get("fan_5").execute(rm, boss.position, p.position);
                 }
             }
 
@@ -122,7 +122,7 @@ public class BellwetherBoss extends Boss {
                          // "Laser + dash combo"
                          boss.activeTelegraph = null;
                          // Fire ring
-                         BulletPatterns.shootRing(rm, boss.position, 16, 250f, 1, 1, 0);
+                         PatternFactory.get("ring_12").execute(rm, boss.position, null);
                          timer = 0;
                      }
                  } else if (timer > 2.0f) {
