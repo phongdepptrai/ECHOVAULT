@@ -4,8 +4,8 @@ apply plugin: "application"
 sourceCompatibility = 1.17
 sourceSets.main.java.srcDirs = [ "src/main/java/" ]
 
-mainClassName = "com.echovault.DesktopLauncher"
-application.mainClass = "com.echovault.DesktopLauncher"
+mainClassName = "com.echovault.tools.DesktopLauncher"
+application.mainClass = "com.echovault.tools.DesktopLauncher"
 eclipse.project.name = appName + "-desktop"
 
 dependencies {
